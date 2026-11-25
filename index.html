@@ -304,7 +304,7 @@ button, .choice, .chip {
     line-height: 1;
 }
 
-.datetime-box, .form-box {
+.datetime-box {
     text-align: left;
     background: rgba(255, 248, 251, 0.85);
     border: 1px solid var(--border-soft);
@@ -321,12 +321,6 @@ button, .choice, .chip {
     font-weight: 700;
     color: var(--primary-deep);
     margin-bottom: 8px;
-}
-
-.field-hint {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    margin-top: 6px;
 }
 
 .chip-row {
@@ -602,23 +596,38 @@ const answers = {
     finalAnswer: ""
 };
 
-try {
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) {
+/* Telegram foydalanuvchi ma'lumotlarini (ism/nikname, @username, ID) avtomatik olish */
+function captureTelegramUser() {
+    try {
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (!tg) return;
         tg.ready();
-        const tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
+        if (typeof tg.expand === "function") tg.expand();
+
+        let tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+
+        if (!tgUser && tg.initData) {
+            const params = new URLSearchParams(tg.initData);
+            const rawUser = params.get("user");
+            if (rawUser) {
+                tgUser = JSON.parse(rawUser);
+            }
+        }
+
         if (tgUser) {
             answers.senderName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ");
             answers.senderUsername = tgUser.username ? "@" + tgUser.username : "";
             answers.senderId = tgUser.id ? String(tgUser.id) : "";
         }
+    } catch (e) {
+        console.warn("Telegram WebApp ma'lumoti olinmadi:", e);
     }
-} catch (e) {
-    console.warn("Telegram WebApp ma'lumoti olinmadi:", e);
 }
 
+captureTelegramUser();
+
 let selectedAnswer = "";
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 10;
 const card = document.getElementById("card");
 
 const icons = {
@@ -630,7 +639,6 @@ const icons = {
     flower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><path d="M12 2a3 3 0 0 1 3 3c0 1.4-.9 2.5-2 2.9 1.1-.4 2.5-.1 3.3.9a3 3 0 0 1-.4 4.2c-1 .8-2.4.9-3.4.3.7 1 .8 2.4 0 3.4a3 3 0 0 1-4.2.4c-1-.8-1.3-2.2-.9-3.3-1.1.4-2.5.1-3.3-.9a3 3 0 0 1 .4-4.2c1-.8 2.4-.9 3.4-.3-.7-1-.8-2.4 0-3.4a3 3 0 0 1 4.1-.5Z"/></svg>',
     coffee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>',
     feather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></svg>',
-    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>'
 };
@@ -665,16 +673,11 @@ function formatUzDate(isoStr) {
     return `${day}-${UZ_MONTHS[monthIndex] || parts[1]}, ${parts[0]}-yil`;
 }
 
-function normalizeUsername(raw) {
-    const clean = (raw || "").trim().replace(/^@+/, "");
-    return clean ? "@" + clean : "";
-}
-
 function getSenderDisplay() {
     const name = (answers.senderName || "").trim();
-    const user = normalizeUsername(answers.senderUsername);
+    const user = (answers.senderUsername || "").trim();
     if (name && user) return `${name} (${user})`;
-    return name || user || "Ko‘rsatilmagan";
+    return name || user || "";
 }
 
 function escapeHtml(str) {
@@ -706,22 +709,28 @@ function showNotice(msg) {
     card.classList.add("shake");
 }
 
-/* Netlify Function orqali xabarni Telegram botga yuborish */
 async function sendToBot() {
+    captureTelegramUser();
+
     const response = await fetch("/.netlify/functions/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(answers)
     });
 
+    if (response.status === 404) {
+        throw new Error("Funksiya topilmadi (404) — netlify/functions/send.js ni tekshiring");
+    }
+
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Yuborishda xatolik");
+        throw new Error(data.error || `Server xatosi (${response.status})`);
     }
     return data;
 }
 
 function start() {
+    captureTelegramUser();
     show(
         `<div class="emblem">${icons.heart}</div>` +
         `<h1>Men bilan uchrashuvga chiqasizmi?</h1>` +
@@ -1041,7 +1050,7 @@ function finalPage() {
         `<button class="choice full" onclick="selectFinalPreset(this, 'Bu ajoyib fikr!')"><span class="choice-icon">✨</span>Bu ajoyib fikr!</button>` +
         `<textarea id="customMessage" oninput="onFinalTextInput()" placeholder="Yoki o‘z fikringiz va tilagingizni yozing..."></textarea>` +
         `<div class="notice" id="notice"></div>` +
-        `<button class="btn-primary full" onclick="goToSenderScreen()">Davom etamiz</button>`,
+        `<button class="btn-primary full" onclick="goToSendScreen()">Davom etamiz</button>`,
         8.5
     );
 }
@@ -1063,7 +1072,7 @@ function onFinalTextInput() {
     if (notice) notice.classList.remove("show");
 }
 
-function goToSenderScreen() {
+function goToSendScreen() {
     const customVal = document.getElementById("customMessage")?.value.trim() || "";
     const finalVal = customVal || selectedAnswer;
 
@@ -1073,49 +1082,16 @@ function goToSenderScreen() {
     }
 
     answers.finalAnswer = finalVal;
-    senderInfo();
-}
-
-function senderInfo() {
-    show(
-        `<div class="emblem">${icons.user}</div>` +
-        `<div class="step-badge">8-qadam · Kimdan</div>` +
-        `<h1>O‘zingizni tanishtiring</h1>` +
-        `<p>Javobingiz kimdan kelganini bilishim uchun ismingiz yoki Telegram @username ingizni yozing</p>` +
-        `<div class="form-box">` +
-            `<div class="field-label">Ismingiz</div>` +
-            `<input type="text" id="senderNameInput" class="input-styled" value="${escapeHtml(answers.senderName)}" placeholder="Masalan: Madina" oninput="clearNotice()">` +
-            `<div class="divider-line"></div>` +
-            `<div class="field-label">Telegram @username</div>` +
-            `<input type="text" id="senderUserInput" class="input-styled" value="${escapeHtml(answers.senderUsername)}" placeholder="Masalan: @madina_uz" oninput="clearNotice()">` +
-            `<div class="field-hint">Kamida ismingiz yoki Telegram @username ingizdan birini kiriting</div>` +
-        `</div>` +
-        `<div class="notice" id="notice"></div>` +
-        `<button class="btn-primary full" onclick="saveSenderAndReview()">Davom etamiz</button>`,
-        9
-    );
-}
-
-function clearNotice() {
-    const notice = document.getElementById("notice");
-    if (notice) notice.classList.remove("show");
-}
-
-function saveSenderAndReview() {
-    const nameVal = document.getElementById("senderNameInput")?.value.trim() || "";
-    const userVal = normalizeUsername(document.getElementById("senderUserInput")?.value || "");
-
-    if (!nameVal && !userVal) {
-        showNotice("Iltimos, ismingizni yoki Telegram @username ingizni kiriting");
-        return;
-    }
-
-    answers.senderName = nameVal;
-    answers.senderUsername = userVal;
     reviewAndSend();
 }
 
 function reviewAndSend() {
+    captureTelegramUser();
+    const sender = getSenderDisplay();
+    const senderRow = sender
+        ? `<div class="ticket-row"><span class="ticket-key">Kimdan</span><span class="ticket-val">${escapeHtml(sender)}</span></div>`
+        : "";
+
     show(
         `<div class="emblem">${icons.send}</div>` +
         `<div class="step-badge">Oxirgi qadam · Yuborish</div>` +
@@ -1123,7 +1099,7 @@ function reviewAndSend() {
         `<p>Ma’lumotlarni tekshirib, yuborish tugmasini bosing</p>` +
         `<div class="ticket">` +
             `<div class="ticket-title">Yuboriladigan ma’lumotlar</div>` +
-            `<div class="ticket-row"><span class="ticket-key">Kimdan</span><span class="ticket-val">${escapeHtml(getSenderDisplay())}</span></div>` +
+            senderRow +
             `<div class="ticket-row"><span class="ticket-key">Manzil</span><span class="ticket-val">${escapeHtml(answers.location)}</span></div>` +
             `<div class="ticket-row"><span class="ticket-key">Sana</span><span class="ticket-val">${escapeHtml(formatUzDate(answers.date))}</span></div>` +
             `<div class="ticket-row"><span class="ticket-key">Vaqt</span><span class="ticket-val">soat ${escapeHtml(answers.time)}</span></div>` +
@@ -1132,8 +1108,8 @@ function reviewAndSend() {
         `</div>` +
         `<div class="notice" id="notice"></div>` +
         `<button class="btn-primary full" id="sendBtn" onclick="submitToBot()">Yuborish</button>` +
-        `<button class="btn-secondary full" onclick="senderInfo()">Ma’lumotni o‘zgartirish</button>`,
-        10
+        `<button class="btn-secondary full" onclick="finalPage()">Javobni o‘zgartirish</button>`,
+        9
     );
 }
 
@@ -1160,16 +1136,21 @@ async function submitToBot() {
         if (err.message === "MISSING_CREDENTIALS") {
             showNotice("Netlify Environment variables ichida BOT_TOKEN va CHAT_ID kiritilmagan!");
         } else {
-            showNotice("Yuborishda xatolik yuz berdi. Qayta urinib ko‘ring.");
+            showNotice("Xatolik: " + err.message);
         }
     }
 }
 
 function renderSummaryTicket() {
+    const sender = getSenderDisplay();
+    const senderRow = sender
+        ? `<div class="ticket-row"><span class="ticket-key">Kimdan</span><span class="ticket-val">${escapeHtml(sender)}</span></div>`
+        : "";
+
     return (
         `<div class="ticket">` +
             `<div class="ticket-title">Uchrashuv eslatmasi</div>` +
-            `<div class="ticket-row"><span class="ticket-key">Kimdan</span><span class="ticket-val">${escapeHtml(getSenderDisplay())}</span></div>` +
+            senderRow +
             `<div class="ticket-row"><span class="ticket-key">Manzil</span><span class="ticket-val">${escapeHtml(answers.location)}</span></div>` +
             `<div class="ticket-row"><span class="ticket-key">Sana</span><span class="ticket-val">${escapeHtml(formatUzDate(answers.date))}</span></div>` +
             `<div class="ticket-row"><span class="ticket-key">Vaqt</span><span class="ticket-val">soat ${escapeHtml(answers.time)}</span></div>` +
@@ -1184,13 +1165,13 @@ function showFinalTicket() {
         `<h1>Javobingiz uchun rahmat!</h1>` +
         `<p>Xabaringiz muvaffaqiyatli yuborildi. Bu kunni samimiy quvonch va intiqlik bilan kutaman.</p>` +
         renderSummaryTicket(),
-        11
+        10
     );
 }
 
 function later() {
     answers.finalAnswer = "Keyinroq";
-    senderInfo();
+    reviewAndSend();
 }
 
 function createPetal() {
