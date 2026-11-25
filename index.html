@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uchrashuv taklifi</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg-1: #fdf3f6;
+    --bg-2: #f8e3ec;
+    --bg-3: #efe7fa;
+    --primary: #b8426f;
+    --primary-deep: #8f2d54;
+    --primary-soft: #fdf0f5;
+    --accent: #d489a6;
+    --text-main: #3e2431;
+    --text-muted: #7b5869;
+    --border-soft: rgba(184, 66, 111, 0.16);
+    --shadow-card: 0 25px 70px rgba(102, 42, 74, 0.14), 0 4px 16px rgba(184, 66, 111, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 24px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text-main);
+    background:
+        radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.9) 0%, transparent 38%),
+        radial-gradient(circle at 88% 15%, rgba(244, 214, 232, 0.7) 0%, transparent 35%),
+        radial-gradient(circle at 80% 85%, rgba(223, 210, 248, 0.75) 0%, transparent 40%),
+        linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+    overflow-x: hidden;
+    position: relative;
+}
+
+.ambient-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.45;
+    pointer-events: none;
+    z-index: 0;
+    animation: drift 12s ease-in-out infinite alternate;
+}
+
+.orb-1 {
+    width: 280px;
+    height: 280px;
+    background: #f9bfd6;
+    top: -60px;
+    left: -60px;
+}
+
+.orb-2 {
+    width: 320px;
+    height: 320px;
+    background: #d8c7ff;
+    bottom: -80px;
+    right: -60px;
+    animation-delay: -5s;
+}
+
+.card {
+    width: 100%;
+    max-width: 540px;
+    padding: 36px 30px 32px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 32px;
+    box-shadow: var(--shadow-card);
+    z-index: 2;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 32px;
+    padding: 1px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(212, 137, 166, 0.25), rgba(255, 255, 255, 0.6));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.content-stage {
+    animation: stageIn 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 26px;
+}
+
+.progress {
+    flex: 1;
+    height: 6px;
+    background: rgba(184, 66, 111, 0.1);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #e07a9f, #b8426f, #9c6ade);
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 34px;
+    text-align: right;
+}
+
+.emblem {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #fff5f8, #fce4ee);
+    border: 1px solid rgba(184, 66, 111, 0.15);
+    color: var(--primary);
+    box-shadow: 0 10px 25px rgba(184, 66, 111, 0.12);
+    animation: gentlePulse 3s ease-in-out infinite;
+}
+
+.emblem svg {
+    width: 30px;
+    height: 30px;
+    stroke-width: 1.8;
+}
+
+.step-badge {
+    display: inline-block;
+    padding: 5px 13px;
+    border-radius: 99px;
+    background: var(--primary-soft);
+    border: 1px solid var(--border-soft);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--primary-deep);
+    font-size: clamp(24px, 5vw, 31px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 4px 0 12px;
+}
+
+p {
+    color: var(--text-muted);
+    font-size: 15.5px;
+    line-height: 1.7;
+    margin: 0 0 14px;
+}
+
+.btn-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 22px;
+    min-height: 54px;
+    flex-wrap: wrap;
+}
+
+button, .choice, .chip {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-primary {
+    border-radius: 16px;
+    padding: 15px 26px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #d85b8a 0%, #b33b68 100%);
+    box-shadow: 0 10px 24px rgba(179, 59, 104, 0.26);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(179, 59, 104, 0.34);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.72;
+    cursor: wait;
+}
+
+.btn-secondary {
+    border-radius: 16px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(123, 88, 105, 0.09);
+    border: 1px solid rgba(123, 88, 105, 0.16);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(123, 88, 105, 0.15);
+    color: var(--text-main);
+}
+
+.no-button {
+    z-index: 10;
+    transition: background 0.25s, color 0.25s, left 0.22s ease-out, top 0.22s ease-out;
+}
+
+.full {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 20px 0 16px;
+}
+
+.choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    padding: 15px 14px;
+    border-radius: 18px;
+    background: rgba(255, 250, 252, 0.95);
+    color: var(--text-main);
+    font-size: 14.5px;
+    font-weight: 600;
+    border: 1.5px solid rgba(184, 66, 111, 0.15);
+    min-height: 60px;
+    box-shadow: 0 3px 10px rgba(102, 42, 74, 0.03);
+}
+
+.choice:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+.choice:hover {
+    border-color: rgba(184, 66, 111, 0.45);
+    background: #fff4f8;
+    transform: translateY(-2px);
+}
+
+.choice.selected {
+    background: linear-gradient(135deg, #d85b8a, #b33b68);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 10px 22px rgba(179, 59, 104, 0.24);
+    transform: translateY(-1px);
+}
+
+.choice-icon {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.datetime-box, .form-box {
+    text-align: left;
+    background: rgba(255, 248, 251, 0.85);
+    border: 1px solid var(--border-soft);
+    border-radius: 22px;
+    padding: 18px;
+    margin: 18px 0 14px;
+}
+
+.field-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary-deep);
+    margin-bottom: 8px;
+}
+
+.field-hint {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.chip {
+    padding: 8px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+    color: var(--text-muted);
+    border: 1.5px solid rgba(184, 66, 111, 0.15);
+}
+
+.chip:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.chip.selected {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 5px 14px rgba(184, 66, 111, 0.22);
+}
+
+.input-styled {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(184, 66, 111, 0.18);
+    background: #fff;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-styled:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(184, 66, 111, 0.08);
+}
+
+.divider-line {
+    height: 1px;
+    background: rgba(184, 66, 111, 0.1);
+    margin: 16px 0;
+}
+
+.datetime-preview {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(184, 66, 111, 0.07);
+    color: var(--primary-deep);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: center;
+    display: none;
+}
+
+.datetime-preview.visible {
+    display: block;
+    animation: stageIn 0.25s ease;
+}
+
+.extra-input-wrap {
+    margin: -4px 0 14px;
+    display: none;
+}
+
+.extra-input-wrap.visible {
+    display: block;
+    animation: stageIn 0.25s ease;
+}
+
+textarea {
+    width: 100%;
+    min-height: 104px;
+    padding: 14px 16px;
+    border: 1.5px solid rgba(184, 66, 111, 0.18);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-main);
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    font-size: 14.5px;
+    margin: 12px 0 6px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(184, 66, 111, 0.08);
+}
+
+.notice {
+    min-height: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #c0395d;
+    margin: 6px 0 2px;
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+
+.notice.show {
+    opacity: 1;
+}
+
+.ticket {
+    margin: 18px 0 14px;
+    padding: 20px;
+    border-radius: 22px;
+    background: linear-gradient(145deg, #fff9fb, #fdf1f6);
+    border: 1.5px dashed rgba(184, 66, 111, 0.3);
+    text-align: left;
+}
+
+.ticket-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--primary-deep);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.ticket-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(184, 66, 111, 0.09);
+    font-size: 13.8px;
+}
+
+.ticket-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.ticket-key {
+    color: var(--text-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.ticket-val {
+    color: var(--text-main);
+    font-weight: 700;
+    text-align: right;
+    word-break: break-word;
+}
+
+.wish-quote {
+    padding: 18px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(255, 245, 249, 0.9), rgba(248, 242, 255, 0.7));
+    border: 1px solid rgba(184, 66, 111, 0.12);
+    margin: 14px 0 18px;
+}
+
+.wish-quote p:last-child {
+    margin-bottom: 0;
+}
+
+.petal {
+    position: fixed;
+    top: -30px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    animation: petalFall linear forwards;
+}
+
+@keyframes stageIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes gentlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(24px, 18px) scale(1.08); }
+}
+
+@keyframes petalFall {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0;
+    }
+    12% {
+        opacity: 0.65;
+    }
+    85% {
+        opacity: 0.45;
+    }
+    100% {
+        transform: translateY(110vh) translateX(60px) rotate(320deg);
+        opacity: 0;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+}
+
+.shake {
+    animation: shake 0.3s ease;
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 28px 18px 24px;
+        border-radius: 26px;
+    }
+
+    .choices {
+        grid-template-columns: 1fr;
+    }
+
+    .choice:last-child:nth-child(odd) {
+        grid-column: auto;
+    }
+
+    .btn-primary, .btn-secondary, .choice {
+        font-size: 14px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="ambient-orb orb-1"></div>
+<div class="ambient-orb orb-2"></div>
+
+<div class="card" id="card"></div>
+
+<script>
+const answers = {
+    senderName: "",
+    senderUsername: "",
+    senderId: "",
+    location: "",
+    date: "",
+    time: "",
+    question1: "",
+    meeting: "",
+    question2: "",
+    finalAnswer: ""
+};
+
+try {
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+        tg.ready();
+        const tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
+        if (tgUser) {
+            answers.senderName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ");
+            answers.senderUsername = tgUser.username ? "@" + tgUser.username : "";
+            answers.senderId = tgUser.id ? String(tgUser.id) : "";
+        }
+    }
+} catch (e) {
+    console.warn("Telegram WebApp ma'lumoti olinmadi:", e);
+}
+
+let selectedAnswer = "";
+const TOTAL_STEPS = 11;
+const card = document.getElementById("card");
+
+const icons = {
+    envelope: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>',
+    sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1m-8.6 8.6-2.1 2.1m0-12.8 2.1 2.1m8.6 8.6 2.1 2.1"/><circle cx="12" cy="12" r="3"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v3l2 1"/></svg>',
+    flower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><path d="M12 2a3 3 0 0 1 3 3c0 1.4-.9 2.5-2 2.9 1.1-.4 2.5-.1 3.3.9a3 3 0 0 1-.4 4.2c-1 .8-2.4.9-3.4.3.7 1 .8 2.4 0 3.4a3 3 0 0 1-4.2.4c-1-.8-1.3-2.2-.9-3.3-1.1.4-2.5.1-3.3-.9a3 3 0 0 1 .4-4.2c1-.8 2.4-.9 3.4-.3-.7-1-.8-2.4 0-3.4a3 3 0 0 1 4.1-.5Z"/></svg>',
+    coffee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>',
+    feather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>'
+};
+
+const UZ_MONTHS = [
+    "yanvar", "fevral", "mart", "aprel", "may", "iyun",
+    "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"
+];
+
+function getLocalISODate(offsetDays = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+function getNextWeekendISO() {
+    const d = new Date();
+    const dayOfWeek = d.getDay();
+    const offset = dayOfWeek === 6 ? 7 : (6 - dayOfWeek);
+    return getLocalISODate(offset);
+}
+
+function formatUzDate(isoStr) {
+    if (!isoStr) return "Belgilanmagan";
+    const parts = isoStr.split("-");
+    if (parts.length !== 3) return isoStr;
+    const monthIndex = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    return `${day}-${UZ_MONTHS[monthIndex] || parts[1]}, ${parts[0]}-yil`;
+}
+
+function normalizeUsername(raw) {
+    const clean = (raw || "").trim().replace(/^@+/, "");
+    return clean ? "@" + clean : "";
+}
+
+function getSenderDisplay() {
+    const name = (answers.senderName || "").trim();
+    const user = normalizeUsername(answers.senderUsername);
+    if (name && user) return `${name} (${user})`;
+    return name || user || "Ko‘rsatilmagan";
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function show(html, step) {
+    const percent = Math.min(100, Math.round((step / TOTAL_STEPS) * 100));
+    const progressLabel = step === 0 ? "" : `${percent}%`;
+    card.innerHTML =
+        `<div class="progress-wrap">` +
+            `<div class="progress"><div class="progress-bar" style="width:${percent}%"></div></div>` +
+            (progressLabel ? `<span class="progress-text">${progressLabel}</span>` : "") +
+        `</div>` +
+        `<div class="content-stage">${html}</div>`;
+}
+
+function showNotice(msg) {
+    const el = document.getElementById("notice");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add("show");
+    card.classList.remove("shake");
+    void card.offsetWidth;
+    card.classList.add("shake");
+}
+
+/* Netlify Function orqali xabarni Telegram botga yuborish */
+async function sendToBot() {
+    const response = await fetch("/.netlify/functions/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(answers)
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Yuborishda xatolik");
+    }
+    return data;
+}
+
+function start() {
+    show(
+        `<div class="emblem">${icons.heart}</div>` +
+        `<h1>Men bilan uchrashuvga chiqasizmi?</h1>` +
+        `<p>Javobingizni samimiyat va intiqlik bilan kutaman...</p>` +
+        `<div class="btn-group">` +
+            `<button class="btn-primary" onclick="yes()">Ha, albatta</button>` +
+            `<button class="btn-secondary no-button" id="noBtn" onclick="no(event)" onmouseover="no(event)" ontouchstart="no(event)">Yo‘q</button>` +
+        `</div>`,
+        1
+    );
+}
+
+function no(e) {
+    if (e && e.type === "touchstart") {
+        e.preventDefault();
+    }
+    const btn = document.getElementById("noBtn");
+    if (!btn) return;
+
+    const words = [
+        "Balki «Ha» dersiz?",
+        "Shoshilmang",
+        "Ushlay olmaysiz",
+        "Yana o‘ylab ko‘ring",
+        "Bu tugma qochadi",
+        "Iltimos, rozi bo‘ling"
+    ];
+
+    btn.innerText = words[Math.floor(Math.random() * words.length)];
+    btn.style.background = "#f9e3ec";
+    btn.style.color = "#8f2d54";
+    btn.style.borderColor = "rgba(184, 66, 111, 0.3)";
+
+    const cardRect = card.getBoundingClientRect();
+    const btnWidth = btn.offsetWidth;
+    const btnHeight = btn.offsetHeight;
+
+    const pad = 16;
+    const maxX = Math.max(pad, cardRect.width - btnWidth - pad);
+    const minY = Math.min(cardRect.height - btnHeight - pad, 140);
+    const maxY = Math.max(minY, cardRect.height - btnHeight - pad);
+
+    btn.style.position = "absolute";
+    btn.style.left = (pad + Math.random() * (maxX - pad)) + "px";
+    btn.style.top = (minY + Math.random() * (maxY - minY)) + "px";
+}
+
+function yes() {
+    burstPetals(10);
+    show(
+        `<div class="emblem">${icons.sparkle}</div>` +
+        `<h1>Juda xursand qildingiz!</h1>` +
+        `<p>Unda keling, bu uchrashuvni sizning didingizga moslab birgalikda rejalashtiramiz.</p>` +
+        `<button class="btn-primary full" onclick="locations()">Rejalashtirishni boshlaymiz</button>`,
+        2
+    );
+}
+
+function locations() {
+    answers.location = "";
+    show(
+        `<div class="emblem">${icons.pin}</div>` +
+        `<div class="step-badge">1-qadam · Manzil</div>` +
+        `<h1>Qayerda uchrashamiz?</h1>` +
+        `<p>O‘zingizni qulay his qiladigan joyni tanlang</p>` +
+        `<div class="choices">` +
+            `<button class="choice" onclick="chooseLocation(this, 'Eko park')"><span class="choice-icon">🌿</span>Eko park</button>` +
+            `<button class="choice" onclick="chooseLocation(this, 'Markaziy park')"><span class="choice-icon">🌷</span>Markaziy park</button>` +
+            `<button class="choice" onclick="chooseLocation(this, 'Shinam kafe')"><span class="choice-icon">☕</span>Shinam kafe</button>` +
+            `<button class="choice" onclick="chooseLocation(this, 'Sayilgoh')"><span class="choice-icon">🍃</span>Sayilgoh</button>` +
+            `<button class="choice" onclick="chooseLocation(this, 'Fargona ko‘chasi')"><span class="choice-icon">🏙️</span>Fargona ko‘chasi</button>` +
+            `<button class="choice" onclick="chooseLocation(this, 'Boshqa joy')"><span class="choice-icon">✨</span>Boshqa joy</button>` +
+        `</div>` +
+        `<div class="extra-input-wrap" id="customLocationWrap">` +
+            `<input type="text" id="customLocationInput" class="input-styled" placeholder="O‘zingiz istagan joy nomini yozing (ixtiyoriy)">` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="dateTime()">Davom etamiz</button>`,
+        3
+    );
+}
+
+function chooseLocation(btn, value) {
+    answers.location = value;
+    document.querySelectorAll(".choice").forEach(x => x.classList.remove("selected"));
+    btn.classList.add("selected");
+
+    const wrap = document.getElementById("customLocationWrap");
+    if (wrap) {
+        wrap.classList.toggle("visible", value === "Boshqa joy");
+    }
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+}
+
+function dateTime() {
+    if (!answers.location) {
+        showNotice("Avval uchrashuv joyini tanlang");
+        return;
+    }
+
+    if (answers.location === "Boshqa joy") {
+        const customLoc = document.getElementById("customLocationInput")?.value.trim();
+        if (customLoc) {
+            answers.location = customLoc;
+        }
+    }
+
+    const todayISO = getLocalISODate(0);
+    const tomorrowISO = getLocalISODate(1);
+    const weekendISO = getNextWeekendISO();
+    const nextWeekISO = getLocalISODate(7);
+
+    show(
+        `<div class="emblem">${icons.calendar}</div>` +
+        `<div class="step-badge">2-qadam · Sana va vaqt</div>` +
+        `<h1>Qachon uchrashamiz?</h1>` +
+        `<p>O‘zingizga eng qulay kun va soatni belgilang</p>` +
+        `<div class="datetime-box">` +
+            `<div class="field-label">Sanani tanlang</div>` +
+            `<div class="chip-row" id="dateChips">` +
+                `<button type="button" class="chip" onclick="pickDatePreset(this, '${tomorrowISO}')">Ertaga</button>` +
+                `<button type="button" class="chip" onclick="pickDatePreset(this, '${weekendISO}')">Dam olish kuni</button>` +
+                `<button type="button" class="chip" onclick="pickDatePreset(this, '${nextWeekISO}')">Keyingi hafta</button>` +
+            `</div>` +
+            `<input type="date" id="dateInput" class="input-styled" min="${todayISO}" value="${answers.date || tomorrowISO}" onchange="onManualDateChange(this.value)">` +
+
+            `<div class="divider-line"></div>` +
+
+            `<div class="field-label">Vaqtni tanlang</div>` +
+            `<div class="chip-row" id="timeChips">` +
+                `<button type="button" class="chip" onclick="pickTimePreset(this, '11:00')">11:00</button>` +
+                `<button type="button" class="chip" onclick="pickTimePreset(this, '14:00')">14:00</button>` +
+                `<button type="button" class="chip" onclick="pickTimePreset(this, '16:30')">16:30</button>` +
+                `<button type="button" class="chip" onclick="pickTimePreset(this, '18:30')">18:30</button>` +
+                `<button type="button" class="chip" onclick="pickTimePreset(this, '20:00')">20:00</button>` +
+            `</div>` +
+            `<input type="time" id="timeInput" class="input-styled" value="${answers.time || ''}" onchange="onManualTimeChange(this.value)">` +
+
+            `<div class="datetime-preview" id="dtPreview"></div>` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="question1()">Vaqtni tasdiqlash</button>`,
+        4
+    );
+
+    if (!answers.date) {
+        answers.date = tomorrowISO;
+        const firstChip = document.querySelector("#dateChips .chip");
+        if (firstChip) firstChip.classList.add("selected");
+    }
+    updateDateTimePreview();
+}
+
+function pickDatePreset(btn, isoDate) {
+    answers.date = isoDate;
+    document.getElementById("dateInput").value = isoDate;
+    document.querySelectorAll("#dateChips .chip").forEach(c => c.classList.remove("selected"));
+    btn.classList.add("selected");
+    updateDateTimePreview();
+}
+
+function onManualDateChange(val) {
+    answers.date = val;
+    document.querySelectorAll("#dateChips .chip").forEach(c => c.classList.remove("selected"));
+    updateDateTimePreview();
+}
+
+function pickTimePreset(btn, timeStr) {
+    answers.time = timeStr;
+    document.getElementById("timeInput").value = timeStr;
+    document.querySelectorAll("#timeChips .chip").forEach(c => c.classList.remove("selected"));
+    btn.classList.add("selected");
+    updateDateTimePreview();
+}
+
+function onManualTimeChange(val) {
+    answers.time = val;
+    document.querySelectorAll("#timeChips .chip").forEach(c => c.classList.remove("selected"));
+    updateDateTimePreview();
+}
+
+function updateDateTimePreview() {
+    const preview = document.getElementById("dtPreview");
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+    if (!preview) return;
+
+    if (answers.date && answers.time) {
+        preview.textContent = `Tanlangan vaqt: ${formatUzDate(answers.date)} · soat ${answers.time}`;
+        preview.classList.add("visible");
+    } else if (answers.date) {
+        preview.textContent = `Tanlangan sana: ${formatUzDate(answers.date)} (endi soatni tanlang)`;
+        preview.classList.add("visible");
+    } else {
+        preview.classList.remove("visible");
+    }
+}
+
+function question1() {
+    if (!answers.date) {
+        showNotice("Iltimos, uchrashuv sanasini tanlang");
+        return;
+    }
+    if (!answers.time) {
+        showNotice("Iltimos, uchrashuv soatini ham belgilang");
+        return;
+    }
+
+    selectedAnswer = "";
+
+    show(
+        `<div class="emblem">${icons.flower}</div>` +
+        `<div class="step-badge">3-qadam · Qiziqarli savol</div>` +
+        `<h1>Bo‘sh vaqtingizda nimani ko‘proq yoqtirasiz?</h1>` +
+        `<div class="choices">` +
+            `<button class="choice" onclick="answer(this, 'Kitob o‘qish')"><span class="choice-icon">📖</span>Kitob o‘qish</button>` +
+            `<button class="choice" onclick="answer(this, 'Sayr qilish')"><span class="choice-icon">🌿</span>Sayr qilish</button>` +
+            `<button class="choice" onclick="answer(this, 'Musiqa tinglash')"><span class="choice-icon">🎧</span>Musiqa tinglash</button>` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="meeting()">Davom etamiz</button>`,
+        5
+    );
+}
+
+function answer(btn, value) {
+    selectedAnswer = value;
+    document.querySelectorAll(".choice").forEach(x => x.classList.remove("selected"));
+    btn.classList.add("selected");
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+}
+
+function meeting() {
+    if (!selectedAnswer) {
+        showNotice("Javoblardan birini tanlang");
+        return;
+    }
+
+    answers.question1 = selectedAnswer;
+    selectedAnswer = "";
+
+    show(
+        `<div class="emblem">${icons.coffee}</div>` +
+        `<div class="step-badge">4-qadam · Uchrashuv uslubi</div>` +
+        `<h1>Qanday uchrashuvni xohlaysiz?</h1>` +
+        `<div class="choices">` +
+            `<button class="choice" onclick="answer(this, 'Sayr qilish')"><span class="choice-icon">🌳</span>Sayr qilish</button>` +
+            `<button class="choice" onclick="answer(this, 'Qahva ichish')"><span class="choice-icon">☕</span>Qahva ichish</button>` +
+            `<button class="choice" onclick="answer(this, 'Muz uchish')"><span class="choice-icon">⛸️</span>Muz uchish</button>` +
+            `<button class="choice" onclick="answer(this, 'Shirinlik yeyish')"><span class="choice-icon">🍰</span>Shirinlik yeyish</button>` +
+            `<button class="choice" onclick="answer(this, 'Shunchaki samimiy suhbat')"><span class="choice-icon">💬</span>Shunchaki suhbat</button>` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="question2()">Tanladim</button>`,
+        6
+    );
+}
+
+function question2() {
+    if (!selectedAnswer) {
+        showNotice("Uchrashuv turini tanlang");
+        return;
+    }
+
+    answers.meeting = selectedAnswer;
+    selectedAnswer = "";
+
+    show(
+        `<div class="emblem">${icons.sparkle}</div>` +
+        `<div class="step-badge">5-qadam · Taassurot</div>` +
+        `<h1>Uchrashuvdan qanday taassurot bilan qaytishni xohlaysiz?</h1>` +
+        `<div class="choices">` +
+            `<button class="choice" onclick="answer(this, 'Ko‘p kulib')"><span class="choice-icon">😊</span>Ko‘p kulib</button>` +
+            `<button class="choice" onclick="answer(this, 'Yangi xotiralar bilan')"><span class="choice-icon">📸</span>Yangi xotiralar bilan</button>` +
+            `<button class="choice" onclick="answer(this, 'Yaxshi kayfiyat bilan')"><span class="choice-icon">🌸</span>Yaxshi kayfiyat bilan</button>` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="wish()">Davom etamiz</button>`,
+        7
+    );
+}
+
+function wish() {
+    if (!selectedAnswer) {
+        showNotice("Javoblardan birini tanlang");
+        return;
+    }
+
+    answers.question2 = selectedAnswer;
+    selectedAnswer = "";
+
+    show(
+        `<div class="emblem">${icons.feather}</div>` +
+        `<div class="step-badge">6-qadam · Tilak</div>` +
+        `<h1>Sizga kichkina tilagim...</h1>` +
+        `<div class="wish-quote">` +
+            `<p>Ba’zi uchrashuvlar shunchaki vaqt o‘tkazish uchun emas, balki chiroyli xotiralar yaratish uchun bo‘ladi.</p>` +
+            `<p>Umid qilamanki, bu uchrashuvimiz ham tabassum, samimiy suhbat va unutilmas lahzalarga boy bo‘ladi.</p>` +
+            `<p>Eng muhimi, o‘zingizni doimo baxtli va xotirjam his qiling.</p>` +
+        `</div>` +
+        `<button class="btn-primary full" onclick="finalPage()">Davom etamiz</button>` +
+        `<button class="btn-secondary full" onclick="later()">Keyinroq</button>`,
+        8
+    );
+}
+
+function finalPage() {
+    selectedAnswer = "";
+    show(
+        `<div class="emblem">${icons.envelope}</div>` +
+        `<div class="step-badge">7-qadam · Yakuniy fikr</div>` +
+        `<h1>Endi sizning navbatingiz!</h1>` +
+        `<p>Uchrashuvimiz haqida nima deb o‘ylaysiz?</p>` +
+        `<button class="choice full" onclick="selectFinalPreset(this, 'Men ham xursandman!')"><span class="choice-icon">🌷</span>Men ham xursandman!</button>` +
+        `<button class="choice full" onclick="selectFinalPreset(this, 'Bu ajoyib fikr!')"><span class="choice-icon">✨</span>Bu ajoyib fikr!</button>` +
+        `<textarea id="customMessage" oninput="onFinalTextInput()" placeholder="Yoki o‘z fikringiz va tilagingizni yozing..."></textarea>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="goToSenderScreen()">Davom etamiz</button>`,
+        8.5
+    );
+}
+
+function selectFinalPreset(btn, value) {
+    selectedAnswer = value;
+    document.querySelectorAll(".choice").forEach(x => x.classList.remove("selected"));
+    btn.classList.add("selected");
+    const textarea = document.getElementById("customMessage");
+    if (textarea) textarea.value = "";
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+}
+
+function onFinalTextInput() {
+    selectedAnswer = "";
+    document.querySelectorAll(".choice").forEach(x => x.classList.remove("selected"));
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+}
+
+function goToSenderScreen() {
+    const customVal = document.getElementById("customMessage")?.value.trim() || "";
+    const finalVal = customVal || selectedAnswer;
+
+    if (!finalVal) {
+        showNotice("Iltimos, tayyor javoblardan birini tanlang yoki fikringizni yozing");
+        return;
+    }
+
+    answers.finalAnswer = finalVal;
+    senderInfo();
+}
+
+function senderInfo() {
+    show(
+        `<div class="emblem">${icons.user}</div>` +
+        `<div class="step-badge">8-qadam · Kimdan</div>` +
+        `<h1>O‘zingizni tanishtiring</h1>` +
+        `<p>Javobingiz kimdan kelganini bilishim uchun ismingiz yoki Telegram @username ingizni yozing</p>` +
+        `<div class="form-box">` +
+            `<div class="field-label">Ismingiz</div>` +
+            `<input type="text" id="senderNameInput" class="input-styled" value="${escapeHtml(answers.senderName)}" placeholder="Masalan: Madina" oninput="clearNotice()">` +
+            `<div class="divider-line"></div>` +
+            `<div class="field-label">Telegram @username</div>` +
+            `<input type="text" id="senderUserInput" class="input-styled" value="${escapeHtml(answers.senderUsername)}" placeholder="Masalan: @madina_uz" oninput="clearNotice()">` +
+            `<div class="field-hint">Kamida ismingiz yoki Telegram @username ingizdan birini kiriting</div>` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" onclick="saveSenderAndReview()">Davom etamiz</button>`,
+        9
+    );
+}
+
+function clearNotice() {
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+}
+
+function saveSenderAndReview() {
+    const nameVal = document.getElementById("senderNameInput")?.value.trim() || "";
+    const userVal = normalizeUsername(document.getElementById("senderUserInput")?.value || "");
+
+    if (!nameVal && !userVal) {
+        showNotice("Iltimos, ismingizni yoki Telegram @username ingizni kiriting");
+        return;
+    }
+
+    answers.senderName = nameVal;
+    answers.senderUsername = userVal;
+    reviewAndSend();
+}
+
+function reviewAndSend() {
+    show(
+        `<div class="emblem">${icons.send}</div>` +
+        `<div class="step-badge">Oxirgi qadam · Yuborish</div>` +
+        `<h1>Hammasi tayyor!</h1>` +
+        `<p>Ma’lumotlarni tekshirib, yuborish tugmasini bosing</p>` +
+        `<div class="ticket">` +
+            `<div class="ticket-title">Yuboriladigan ma’lumotlar</div>` +
+            `<div class="ticket-row"><span class="ticket-key">Kimdan</span><span class="ticket-val">${escapeHtml(getSenderDisplay())}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Manzil</span><span class="ticket-val">${escapeHtml(answers.location)}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Sana</span><span class="ticket-val">${escapeHtml(formatUzDate(answers.date))}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Vaqt</span><span class="ticket-val">soat ${escapeHtml(answers.time)}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Uchrashuv turi</span><span class="ticket-val">${escapeHtml(answers.meeting)}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Javobingiz</span><span class="ticket-val">${escapeHtml(answers.finalAnswer)}</span></div>` +
+        `</div>` +
+        `<div class="notice" id="notice"></div>` +
+        `<button class="btn-primary full" id="sendBtn" onclick="submitToBot()">Yuborish</button>` +
+        `<button class="btn-secondary full" onclick="senderInfo()">Ma’lumotni o‘zgartirish</button>`,
+        10
+    );
+}
+
+async function submitToBot() {
+    const btn = document.getElementById("sendBtn");
+    const notice = document.getElementById("notice");
+    if (notice) notice.classList.remove("show");
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Yuborilmoqda...";
+    }
+
+    try {
+        await sendToBot();
+        burstPetals(18);
+        showFinalTicket();
+    } catch (err) {
+        console.error("Botga yuborishda xatolik:", err);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Yuborish";
+        }
+        if (err.message === "MISSING_CREDENTIALS") {
+            showNotice("Netlify Environment variables ichida BOT_TOKEN va CHAT_ID kiritilmagan!");
+        } else {
+            showNotice("Yuborishda xatolik yuz berdi. Qayta urinib ko‘ring.");
+        }
+    }
+}
+
+function renderSummaryTicket() {
+    return (
+        `<div class="ticket">` +
+            `<div class="ticket-title">Uchrashuv eslatmasi</div>` +
+            `<div class="ticket-row"><span class="ticket-key">Kimdan</span><span class="ticket-val">${escapeHtml(getSenderDisplay())}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Manzil</span><span class="ticket-val">${escapeHtml(answers.location)}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Sana</span><span class="ticket-val">${escapeHtml(formatUzDate(answers.date))}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Vaqt</span><span class="ticket-val">soat ${escapeHtml(answers.time)}</span></div>` +
+            `<div class="ticket-row"><span class="ticket-key">Reja</span><span class="ticket-val">${escapeHtml(answers.meeting)}</span></div>` +
+        `</div>`
+    );
+}
+
+function showFinalTicket() {
+    show(
+        `<div class="emblem">${icons.check}</div>` +
+        `<h1>Javobingiz uchun rahmat!</h1>` +
+        `<p>Xabaringiz muvaffaqiyatli yuborildi. Bu kunni samimiy quvonch va intiqlik bilan kutaman.</p>` +
+        renderSummaryTicket(),
+        11
+    );
+}
+
+function later() {
+    answers.finalAnswer = "Keyinroq";
+    senderInfo();
+}
+
+function createPetal() {
+    const petal = document.createElement("div");
+    petal.className = "petal";
+
+    const colors = ["#f4a9c4", "#f9c6d7", "#e3c9f7", "#ffd8e4"];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = 10 + Math.random() * 10;
+
+    petal.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}"><path d="M12 2C16 6 19 10 19 15C19 19 15.8 22 12 22C8.2 22 5 19 5 15C5 10 8 6 12 2Z"/></svg>`;
+    petal.style.left = Math.random() * 100 + "vw";
+    petal.style.animationDuration = (6 + Math.random() * 5) + "s";
+
+    document.body.appendChild(petal);
+
+    setTimeout(() => petal.remove(), 11000);
+}
+
+function burstPetals(count) {
+    for (let i = 0; i < count; i++) {
+        setTimeout(createPetal, i * 110);
+    }
+}
+
+setInterval(createPetal, 1100);
+
+show(
+    `<div class="emblem">${icons.envelope}</div>` +
+    `<h1>Assalomu alaykum va rahmatullohi va barokatuh</h1>` +
+    `<p>Siz uchun kichkina, lekin chin dildan tayyorlangan bir taklifim bor...</p>` +
+    `<p>Davom etishga tayyormisiz?</p>` +
+    `<button class="btn-primary full" onclick="start()">Davom etamiz</button>`,
+    0
+);
+</script>
+
+</body>
+</html>
